@@ -1,96 +1,40 @@
-<!-- APNA LUCK GIVEAWAY CODE -->
-<!-- नीचे दिए गए कोड को कॉपी करके .html फ़ाइल में सेव करें -->
+// पिछला winner logic हटाकर यह नया logic लगायें
+function participateDraw(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const mobile = document.getElementById('mobile').value.trim();
+    
+    // 1. पार्टिसिपेंट को एक लिस्ट में जोड़ें
+    let participants = JSON.parse(localStorage.getItem('apnaLuck_participants')) || [];
+    participants.push({ username, mobile: mobile.slice(-4) });
+    localStorage.setItem('apnaLuck_participants', JSON.stringify(participants));
 
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apna Luck - Mega Giveaway</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
-        body { background: linear-gradient(135deg, #111a2e 0%, #1a2a4a 100%); color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
-        .giveaway-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 2px solid #dfb76c; border-radius: 20px; width: 100%; max-width: 450px; padding: 25px; text-align: center; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5); }
-        .logo-box { width: 120px; height: 120px; margin: 0 auto 15px; border-radius: 50%; border: 3px solid #dfb76c; box-shadow: 0 0 15px #dfb76c; overflow: hidden; background-color: #000; }
-        .logo-box img { width: 100%; height: 100%; object-fit: cover; }
-        h1 { font-size: 24px; color: #dfb76c; text-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-bottom: 5px; }
-        .subtitle { font-size: 14px; color: #bdc3c7; margin-bottom: 20px; }
-        .prize-pool { background: linear-gradient(90deg, #b38728, #fbf5b7, #daaf38, #aa771c); color: #111; font-weight: bold; padding: 10px; border-radius: 10px; font-size: 16px; margin-bottom: 20px; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; font-size: 12px; color: #dfb76c; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #4a5a80; background: rgba(16, 26, 46, 0.6); color: #fff; font-size: 14px; outline: none; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn-submit { background: linear-gradient(45deg, #dfb76c, #aa771c); color: #111; }
-        .btn-register { background: linear-gradient(45deg, #1e7e34, #28a745); color: white; margin-top: 15px; }
-        .status-msg { margin-top: 15px; font-size: 14px; font-weight: bold; }
-        .timer-box { font-size: 13px; color: #ff4d4d; margin-top: 5px; display: none; }
-        .winner-section { margin-top: 25px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid #4a5a80; padding: 15px; border-radius: 10px; }
-        .winner-title { font-size: 13px; color: #28a745; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .winner-details { font-size: 15px; font-weight: bold; color: #fff; }
-    </style>
-</head>
-<body>
-    <div class="giveaway-card">
-        <div class="logo-box"><img src="7118.jpg" alt="Logo" onerror="this.src='https://placehold.co/120?text=Apna+Luck'"></div>
-        <h1>APNA LUCK GIVEAWAY</h1>
-        <p class="subtitle">हर 24 घंटे में भाग्य आजमाएं और जीतें</p>
-        <div class="prize-pool">🎁 इनामी राशि: ₹100 से ₹500 तक!</div>
-        <button class="btn btn-register" onclick="window.open('https://apnaluck.com/register?refer=774167', '_blank')">📲 रजिस्टर करें (Direct Link)</button>
-        <hr style="border:0; border-top:1px solid #4a5a80; margin:20px 0;">
-        <form id="drawForm" onsubmit="participateDraw(event)">
-            <div class="input-group"><label>यूजरनेम (Username)</label><input type="text" id="username" required></div>
-            <div class="input-group"><label>मोबाइल नंबर (Mobile Number)</label><input type="tel" id="mobile" pattern="[0-9]{10}" required></div>
-            <button type="submit" id="submitBtn" class="btn btn-submit">🎰 लकी ड्रा में भाग लें</button>
-        </form>
-        <div id="statusMsg" class="status-msg"></div>
-        <div id="timerBox" class="timer-box">अगला ड्रा ओपन होने का समय: <span id="countdown">24:00:00</span></div>
-        <div class="winner-section">
-            <div class="winner-title">🏆 पिछला लकी विजेता 🏆</div>
-            <div class="winner-details" id="lastWinnerDisplay">Loading...</div>
-        </div>
-    </div>
-<script>
-    window.onload = function() { checkParticipationStatus(); updateWinnerDisplay(); };
-    function participateDraw(e) {
-        e.preventDefault();
-        const username = document.getElementById('username').value.trim();
-        const mobile = document.getElementById('mobile').value.trim();
-        const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000); 
-        localStorage.setItem('apnaLuck_lockUntil', expiryTime);
-        const randomPrize = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
-        localStorage.setItem('apnaLuck_lastWinner', JSON.stringify({username: username, mobileEnd: mobile.slice(-4), prize: randomPrize}));
-        document.getElementById('drawForm').reset();
-        alert(`🎉 सफलतापूर्ण शामिल हुए!`);
-        checkParticipationStatus(); updateWinnerDisplay();
+    // 2. पार्टिसिपेशन लॉक लगायें (24 घंटे के लिए)
+    const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000); 
+    localStorage.setItem('apnaLuck_lockUntil', expiryTime);
+
+    // 3. विनर चुनने का लॉजिक: अगर 24 घंटे हो गए हैं, तो ही रैंडम विनर चुनें
+    selectRandomWinner();
+
+    alert("🎉 बधाई! आप लकी ड्रा में शामिल हो गए हैं। विजेता का नाम 24 घंटे बाद अपडेट होगा।");
+    location.reload();
+}
+
+function selectRandomWinner() {
+    let participants = JSON.parse(localStorage.getItem('apnaLuck_participants')) || [];
+    if (participants.length > 0) {
+        // रैंडम इंडेक्स से विजेता चुनें
+        const winner = participants[Math.floor(Math.random() * participants.length)];
+        const prize = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
+        
+        localStorage.setItem('apnaLuck_lastWinner', JSON.stringify({
+            username: winner.username,
+            mobileEnd: winner.mobile,
+            prize: prize
+        }));
+        
+        // लिस्ट खाली करें ताकि अगला ड्रा नया हो सके
+        localStorage.setItem('apnaLuck_participants', JSON.stringify([]));
     }
-    function checkParticipationStatus() {
-        const lockUntil = localStorage.getItem('apnaLuck_lockUntil');
-        if (lockUntil && new Date().getTime() < lockUntil) {
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitBtn').innerText = "आप भाग ले चुके हैं";
-            document.getElementById('timerBox').style.display = 'block';
-            startCountdown(lockUntil);
-        }
-    }
-    function startCountdown(endTime) {
-        setInterval(function() {
-            const distance = endTime - new Date().getTime();
-            if (distance < 0) { location.reload(); return; }
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            document.getElementById("countdown").innerHTML = hours + ":" + minutes + ":" + seconds;
-        }, 1000);
-    }
-    function updateWinnerDisplay() {
-        const lastWinner = localStorage.getItem('apnaLuck_lastWinner');
-        if(lastWinner) {
-            const data = JSON.parse(lastWinner);
-            document.getElementById('lastWinnerDisplay').innerHTML = `👤 User: ${data.username} (******${data.mobileEnd}) <br> 💰 राशि: ₹${data.prize}`;
-        } else {
-            document.getElementById('lastWinnerDisplay').innerHTML = `👤 User: Lokesh_77 (******4167) <br> 💰 राशि: ₹350`;
-        }
-    }
-</script>
-</body>
-</html>
+}
