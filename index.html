@@ -11,6 +11,7 @@
             background: linear-gradient(135deg, #111a2e 0%, #1a2a4a 100%);
             color: #fff;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
@@ -69,6 +70,12 @@
         .winner-section { margin-top: 25px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid #4a5a80; padding: 15px; border-radius: 10px; }
         .winner-title { font-size: 13px; color: #28a745; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
         .winner-details { font-size: 15px; font-weight: bold; color: #fff; }
+
+        /* Secret Admin Panel CSS */
+        .admin-trigger { margin-top: 20px; font-size: 11px; color: #4a5a80; cursor: pointer; text-decoration: underline; }
+        .admin-panel { display: none; margin-top: 15px; background: rgba(255, 0, 0, 0.1); border: 1px dashed #ff4d4d; padding: 15px; border-radius: 10px; width: 100%; max-width: 450px; text-align: left; }
+        .admin-btn { padding: 8px 12px; background: #ff4d4d; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 12px;}
+        .admin-btn-reset { background: #6c757d; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -108,10 +115,21 @@
         </div>
     </div>
 
+    <div class="admin-trigger" onclick="openAdminPanel()">🛠 Admin Control Panel</div>
+
+    <div class="admin-panel" id="adminPanel">
+        <h3 style="color: #ff4d4d; font-size: 14px; margin-bottom: 10px;">🔒 Admin Panel (Secret)</h3>
+        <p style="font-size: 13px;">कुल पार्टिसिपेंट्स: <span id="totalParticipantsCount" style="font-weight:bold; color:#dfb76c;">0</span></p>
+        
+        <button class="admin-btn" onclick="triggerAdminDraw()">🎰 अभी Winner चुनें</button>
+        <button class="admin-btn admin-btn-reset" onclick="resetParticipants()">🧹 List साफ़ करें</button>
+    </div>
+
 <script>
     window.onload = function() {
         checkParticipationStatus();
         updateWinnerDisplay();
+        updateAdminStats();
     };
 
     function participateDraw(e) {
@@ -125,7 +143,7 @@
             return;
         }
 
-        // 1. पार्टिसिपेंट को लिस्ट में सेव करें
+        // 1. सिर्फ पार्टिसिपेंट को लिस्ट में सेव करना (विनर तुरंत नहीं बनेगा)
         let participants = JSON.parse(localStorage.getItem('apnaLuck_participants')) || [];
         participants.push({ username: username, mobileEnd: mobile.slice(-4) });
         localStorage.setItem('apnaLuck_participants', JSON.stringify(participants));
@@ -134,32 +152,65 @@
         const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000); 
         localStorage.setItem('apnaLuck_lockUntil', expiryTime);
 
-        // 3. इस पूरी लिस्ट में से ऑटोमेटिकली किसी एक रैंडम यूजर को विनर चुनें
-        selectRandomWinner(participants);
-
-        alert(`🎉 बधाई हो! आप लकी ड्रा में सफलतापूर्वक शामिल हो गए हैं।`);
+        alert(`🎉 बधाई हो! आप लकी ड्रा में सफलतापूर्वक शामिल हो गए हैं। विजेता की घोषणा Admin द्वारा की जाएगी।`);
         location.reload();
     }
 
-    function selectRandomWinner(participantsList) {
-        if (participantsList && participantsList.length > 0) {
-            // पूरी लिस्ट से किसी भी एक को रैंडम उठाना
-            const randomIndex = Math.floor(Math.random() * participantsList.length);
-            const winner = participantsList[randomIndex];
-            
-            // ₹100 से ₹500 के बीच रैंडम इनामी राशि बनाना
-            const randomPrize = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
-
-            const winnerData = {
-                username: winner.username,
-                mobileEnd: winner.mobileEnd,
-                prize: randomPrize
-            };
-            
-            // विनर को परमानेंट डिस्प्ले के लिए सेट करना
-            localStorage.setItem('apnaLuck_lastWinner', JSON.stringify(winnerData));
+    // --- ADMIN PANEL FUNCTIONS ---
+    
+    function openAdminPanel() {
+        const password = prompt("Admin पासवर्ड दर्ज करें:");
+        if (password === "admin123") { // Aap is password ko change kar sakte hain
+            document.getElementById('adminPanel').style.display = 'block';
+            updateAdminStats();
+            alert("Admin Access Granted!");
+        } else if (password !== null) {
+            alert("गलत पासवर्ड!");
         }
     }
+
+    function updateAdminStats() {
+        let participants = JSON.parse(localStorage.getItem('apnaLuck_participants')) || [];
+        document.getElementById('totalParticipantsCount').innerText = participants.length;
+    }
+
+    function triggerAdminDraw() {
+        let participants = JSON.parse(localStorage.getItem('apnaLuck_participants')) || [];
+        
+        if (participants.length === 0) {
+            alert("❌ अभी तक किसी भी यूजर ने भाग नहीं लिया है!");
+            return;
+        }
+
+        // पूरी लिस्ट से किसी भी एक को रैंडम उठाना
+        const randomIndex = Math.floor(Math.random() * participants.length);
+        const winner = participants[randomIndex];
+        
+        // ₹100 से ₹500 के बीच रैंडम इनामी राशि बनाना
+        const randomPrize = Math.floor(Math.random() * (500 - 100 + 1)) + 100;
+
+        const winnerData = {
+            username: winner.username,
+            mobileEnd: winner.mobileEnd,
+            prize: randomPrize
+        };
+        
+        // विनर सेट करना
+        localStorage.setItem('apnaLuck_lastWinner', JSON.stringify(winnerData));
+        
+        alert(`🎉 Winner चुन लिया गया है: ${winner.username}`);
+        location.reload();
+    }
+
+    function resetParticipants() {
+        if(confirm("क्या आप सच में सभी पार्टिसिपेंट्स की लिस्ट डिलीट करना चाहते हैं?")) {
+            localStorage.removeItem('apnaLuck_participants');
+            alert("पार्टिसिपेंट्स लिस्ट साफ़ कर दी गई है।");
+            location.reload();
+        }
+    }
+
+    // --- COUTDOWN & DISPLAY FUNCTIONS ---
 
     function checkParticipationStatus() {
         const lockUntil = localStorage.getItem('apnaLuck_lockUntil');
